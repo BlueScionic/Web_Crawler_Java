@@ -1,0 +1,2 @@
+ideas:
+create a function that takes an address and port, and sends back the required information like number of links and images etc according to assignment
