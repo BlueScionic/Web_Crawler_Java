@@ -1,2 +1,18 @@
 ideas:
 create a function that takes an address and port, and sends back the required information like number of links and images etc according to assignment
+
+
+        //Search through page for links
+        Iterator linkIterator = page.iterator();
+        while (linkIterator.hasNext()) {
+            int index = 0;
+            String linkString = linkIterator.next().toString();
+            Pattern linkPattern = Pattern.compile("<a href=\"(.*?)\"");
+            Matcher linkMatcher = linkPattern.matcher(linkString);
+            while (linkMatcher.find()) {
+                if (!(linkList.contains(linkMatcher.group(1)))) {
+                    linkList.add(linkMatcher.group(1));
+                }
+
+            }
+        }
