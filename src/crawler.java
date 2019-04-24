@@ -5,7 +5,9 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,7 +31,7 @@ public class crawler {
         }
         System.out.println("Crawling through " + server_address + "...");
 
-        Page homePage = getPage(server_address, port, index_page_address);
+        Page homePage = getPage(server_address, port, home_page_address);
         ArrayList<String> homePageLinks = getLinks(homePage);
         homePage = getPageheaders(homePage);
 
@@ -45,7 +47,6 @@ public class crawler {
                 ArrayList<String> links = getLinks(secondPages);
                 secondPages = getPageheaders(secondPages);
                 pageList.add(secondPages);
-                //ArrayList<String> secondPagesMeta = getPageMeta(secondPages);
                 for (String linkIterator : links) {
                     if (!siteLinks.contains(linkIterator)) {
                         siteLinks.add(linkIterator);
@@ -53,7 +54,22 @@ public class crawler {
                 }
             }
         }
-        siteLinks.remove("/");
+        ArrayList<String> siteLinksIterator = new ArrayList<>();
+        siteLinksIterator.addAll(siteLinks);
+        for (String pageIterator : siteLinksIterator) {
+            if (!pageIterator.contains("http")) {
+                Page thirdPages = getPage(server_address, port, pageIterator);
+                ArrayList<String> links = getLinks(thirdPages);
+                thirdPages = getPageheaders(thirdPages);
+                pageList.add(thirdPages);
+                for (String linkIterator : links) {
+                    if (!siteLinks.contains(linkIterator)) {
+                        siteLinks.add(linkIterator);
+                    }
+                }
+            }
+        }
+        //siteLinks.remove("/");
 
 
         int pageCount = 0;
@@ -62,38 +78,42 @@ public class crawler {
         String maxName = pageList.get(0).url;
         int min = pageList.get(0).pagelength;
         String minName = pageList.get(0).url;
+        Date oldest = pageList.get(0).modified;
+        String oldestName = pageList.get(0).url;
+        Date newest = pageList.get(0).modified;
+        String newestName = pageList.get(0).url;
         for (Page pageIterator : pageList) {
             if (pageIterator.status.equals("404")) {
                 System.out.println("Page not found at: " + pageIterator.domain + "/" + pageIterator.url);
                 errorCount++;
-            }
-            if (pageIterator.isPagehtml()) {
-                pageCount++;
-            }
-            if (pageIterator.pagelength > max) {
-                max = pageIterator.pagelength;
-                maxName = pageIterator.url;
-            }
-            if (pageIterator.pagelength < min) {
-                min = pageIterator.pagelength;
-                minName = pageIterator.url;
+            } else {
+                if (pageIterator.isPagehtml()) {
+                    pageCount++;
+                }
+                if (pageIterator.pagelength > max) {
+                    max = pageIterator.pagelength;
+                    maxName = pageIterator.url;
+                }
+                if (pageIterator.pagelength < min) {
+                    min = pageIterator.pagelength;
+                    minName = pageIterator.url;
+                }
+                if (pageIterator.modified.before(oldest)) {
+                    oldest = pageIterator.modified;
+                    oldestName = pageIterator.url;
+                }
+                if (pageIterator.modified.after(newest)) {
+                    newest = pageIterator.modified;
+                    newestName = pageIterator.url;
+                }
             }
         }
 
-        //int max = Collections.max(pageList.get(1).pagelength);
-
-        //System.out.println(pageList.get(1).pagelength);
-
-        //List<Integer> list=new ArrayList<>();
-
-
-
-/*        Iterator i = pageList.iterator();
+/*        Iterator i = siteLinks.iterator();
         System.out.println("The ArrayList elements are:");
         while (i.hasNext()) {
             System.out.println(i.next());
         }*/
-
 
         // 1
         System.out.println("Number of distinct URLs on site: " + siteLinks.size());
@@ -103,24 +123,20 @@ public class crawler {
         System.out.println("Smallest page: " + minName + " " + min + " bytes");
         System.out.println("Largest page: " + maxName + " " + max + " bytes");
         // 4
-
+        System.out.println("Oldest modified page: " + oldestName + " at " + oldest);
+        System.out.println("Newest modified page: " + newestName + " at " + newest);
         // 5
-        System.out.println("Number of \"404 not found\" pages: " + errorCount);
+        System.out.println("Number of invalid \"404 not found\" URLs: " + errorCount);
         // 6
-
-
-
-
-
 
     }
     private static Page getPage(String server_address, int port, String page_address) throws IOException {
         //Limit usage of connecting to a page.
-        /*        try {
+        try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }*/
+        }
         //Create page object
         Page page = new Page();
         page.domain = server_address;
