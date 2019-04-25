@@ -7,6 +7,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,8 +15,8 @@ import java.util.regex.Pattern;
 public class crawler {
     private static int default_port = 80;
     private static String default_server_address = "icebluescion.ddns.net";
-    private static String home_page_address = "";
-    private static String index_page_address = "index.html";
+    private static String default_page_address = "/";
+    //private static String index_page_address = "index.html";
     private static SimpleDateFormat modified_date_format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH);
 
     public static void main(String[] args) throws IOException, ParseException {
@@ -31,7 +32,7 @@ public class crawler {
         }
         System.out.println("Crawling through " + server_address + "...");
 
-        Page homePage = getPage(server_address, port, home_page_address);
+        Page homePage = getPage(server_address, port, default_page_address);
         ArrayList<String> homePageLinks = getLinks(homePage);
         homePage = getPageheaders(homePage);
 
@@ -132,11 +133,11 @@ public class crawler {
     }
     private static Page getPage(String server_address, int port, String page_address) throws IOException {
         //Limit usage of connecting to a page.
-        try {
+/*        try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }*/
         //Create page object
         Page page = new Page();
         page.domain = server_address;

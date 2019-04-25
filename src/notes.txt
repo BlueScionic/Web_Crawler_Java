@@ -2,6 +2,10 @@ ideas:
 create a function that takes an address and port, and sends back the required information like number of links and images etc according to assignment
 
 
+update the links to get everything href and src=
+count the number that returns as content type /html and anything that isnt
+
+
         //Search through page for links
         Iterator linkIterator = page.iterator();
         while (linkIterator.hasNext()) {
