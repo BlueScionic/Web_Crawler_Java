@@ -1,11 +1,9 @@
-# Makefile for comp3310 tcp/udp lab
+# Compile the crawler
 
-PROGS=server client Server.class Client.class
+PROGS=crawler.class
 
 all: $(PROGS)
 
-%: %.c
-	gcc -Wall -o $* $*.c
 %.class: %.java
 	javac $*.java
 
