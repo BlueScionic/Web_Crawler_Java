@@ -2,13 +2,11 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Array;
-import java.net.Socket;
+import java.net.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,7 +16,6 @@ public class crawler {
     private static String default_server_address = "icebluescion.ddns.net";
     private static String default_page_address = "/";
     private static boolean verbose = false;
-    //private static String index_page_address = "index.html";
     private static SimpleDateFormat modified_date_format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH);
 
     private static ArrayList<String> siteLinks = new ArrayList<>();
@@ -44,50 +41,16 @@ public class crawler {
         System.out.println("Crawling through " + server_address + "...");
 
         Page homePage = getPage(server_address, port, default_page_address);
-        ArrayList<String> homePageLinks = getLinks(homePage);
         homePage = getPageheaders(homePage);
+        ArrayList<String> homePageLinks = getLinks(homePage);
 
         siteLinks.addAll(homePageLinks);
         sitePages.add(homePage);
 
         crawlLinks(server_address,port,homePageLinks);
 
-/*        for (String pageIterator : homePageLinks) {
-            if (!pageIterator.contains("http")) {
-                Page secondPages = getPage(server_address, port, pageIterator);
-                ArrayList<String> links = getLinks(secondPages);
-                secondPages = getPageheaders(secondPages);
-                sitePages.add(secondPages);
-                for (String linkIterator : links) {
-                    if (!siteLinks.contains(linkIterator)) {
-                        siteLinks.add(linkIterator);
-                    }
-                }
-            }
-        }
-        // Iterate a third time
-        ArrayList<String> siteLinksIteratorList = new ArrayList<>();
-        siteLinksIteratorList.addAll(siteLinks);
-        for (String siteLinksIterator : siteLinksIteratorList) {
-            if (!pageIterator.contains("http")) {
-                Page thirdPages = getPage(server_address, port, pageIterator);
-                ArrayList<String> links = getLinks(thirdPages);
-                thirdPages = getPageheaders(thirdPages);
-                for (String )
-                if () {
-                    sitePages.add(thirdPages);
-                }
-                for (String linkIterator : links) {
-                    if (!siteLinks.contains(linkIterator)) {
-                        siteLinks.add(linkIterator);
-                    }
-                }
-            }
-        }*/
-
         int pagehtmlCount = 0;
         int pagenonhtmlCount = 0;
-        int errorCount = 0;
         int max = sitePages.get(0).pagelength;
         String maxName = sitePages.get(0).url;
         int min = sitePages.get(0).pagelength;
@@ -96,12 +59,14 @@ public class crawler {
         String oldestName = sitePages.get(0).url;
         Date newest = sitePages.get(0).modified;
         String newestName = sitePages.get(0).url;
+        ArrayList<String> invalidPagesList = new ArrayList<>();
+        ArrayList<String> redirectPagesList = new ArrayList<>();
+
         for (Page pageIterator : sitePages) {
             if (pageIterator.status.equals("404")) {
-                System.out.println("Page not found at: " + pageIterator.domain + "/" + pageIterator.url);
-                errorCount++;
+                invalidPagesList.add(pageIterator.domain + "/" + pageIterator.url);
             } else if (pageIterator.status.equals("200")) {
-                if (pageIterator.isPagehtml()) {
+                if (pageIterator.isPagehtml() && !pageIterator.redirected) {
                     pagehtmlCount++;
                     if (pageIterator.pagelength > max) {
                         max = pageIterator.pagelength;
@@ -123,8 +88,7 @@ public class crawler {
                     pagenonhtmlCount++;
                 }
             } else if (pageIterator.redirected) {
-                System.out.println(pageIterator.location);
-                System.out.println(pageIterator.redirected);
+                redirectPagesList.add(pageIterator.url + " --> " + pageIterator.location);
             } else {
                 System.out.println("Page " + pageIterator.url + " returned status: " + pageIterator.status);
             }
@@ -145,7 +109,7 @@ public class crawler {
         System.out.println("Number of distinct URLs on site: " + siteLinks.size());
         // 2
         System.out.println("Number of HTML pages: " + pagehtmlCount);
-        System.out.println("Number of non-HTML pages: " + pagenonhtmlCount);
+        System.out.println("Number of non-HTML objects: " + pagenonhtmlCount);
         // 3
         System.out.println("Smallest page: " + minName + " " + min + " bytes");
         System.out.println("Largest page: " + maxName + " " + max + " bytes");
@@ -153,8 +117,16 @@ public class crawler {
         System.out.println("Oldest modified page: " + oldestName + " at " + oldest);
         System.out.println("Newest modified page: " + newestName + " at " + newest);
         // 5
-        System.out.println("Number of invalid \"404 not found\" URLs: " + errorCount);
+        System.out.println("List of invalid \"404 not found\" URLs: ");
+        for (String invalidPagesIterator : invalidPagesList) {
+            System.out.println(invalidPagesIterator);
+        }
         // 6
+        System.out.println("List of redirected 30x URLs: ");
+        for (String redirectedPagesIterator : redirectPagesList) {
+            System.out.println(redirectedPagesIterator);
+        }
+
     }
     private static Page getPage(String server_address, int port, String page_address) throws IOException {
         //Limit usage of connecting to a page.
@@ -205,13 +177,32 @@ public class crawler {
 
     private static ArrayList<String> getLinks(Page page) {
         ArrayList<String> linkList = new ArrayList<>();
+        Pattern hrefPattern = Pattern.compile("href=\"(.*?)\"");
+        Pattern srcPattern = Pattern.compile("src=\"(.*?)\"");
+        Pattern urlPattern = Pattern.compile("^[^:/?#]+:?//([^/?#]*)?/([^?#]*)(\\?([^#]*))?(#(.*))?");
+        Pattern pagePattern = Pattern.compile("^([^/?#]*)?/([^?#]*)(\\?([^#]*))?(#(.*))?");
+        Matcher pageMatcher = pagePattern.matcher(page.url);
 
+/*            if (urlMatcher.find()) {
+                crawlLinks.add(urlMatcher.group(2));
+                System.out.println(urlMatcher.group(2));
+                       *//* currentPage.domain = urlMatcher.group(1);
+                        System.out.println(currentPage.domain);
+                        currentPage.location = urlMatcher.group(2);
+                        System.out.println(currentPage.location);*//*
+            }*/
+
+        //Get links if a redirect
+        if (page.redirected) {
+            Matcher urlMatcher = urlPattern.matcher(page.location);
+            if (urlMatcher.find()) {
+                if (!linkList.contains(urlMatcher.group(2))) {
+                    linkList.add(urlMatcher.group(2));
+                }
+            }
+        }
         //Search through page for links
         for (String linkIterator : page.content) {
-            Pattern hrefPattern = Pattern.compile("href=\"(.*?)\"");
-            Pattern srcPattern = Pattern.compile("src=\"(.*?)\"");
-            //Pattern linkPattern = Pattern.compile("<a href=\"(.*?)\"");
-
             Matcher hrefMatcher = hrefPattern.matcher(linkIterator);
             Matcher srcMatcher = srcPattern.matcher(linkIterator);
 
@@ -221,7 +212,9 @@ public class crawler {
                 }
             }
             while (srcMatcher.find()) {
-                if (!(linkList.contains(srcMatcher.group(1)))) {
+                if (pageMatcher.find()) {
+                    linkList.add(pageMatcher.group(1) + "/" + srcMatcher.group(1));
+                } else if (!(linkList.contains(srcMatcher.group(1)))) {
                     linkList.add(srcMatcher.group(1));
                 }
             }
@@ -233,21 +226,30 @@ public class crawler {
         ArrayList<String> crawlLinks = new ArrayList<>();
         ArrayList<Page> crawlPages = new ArrayList<>();
 
+
         //Crawl through rest of website
         for (String siteLinkIterator : links) {
             if (!siteLinkIterator.contains("http")) {
                 Page currentPage = getPage(domain,port,siteLinkIterator);
-                ArrayList<String> pagelinks = getLinks(currentPage);
                 currentPage = getPageheaders(currentPage);
+                ArrayList<String> pagelinks = getLinks(currentPage);
                 crawlPages.add(currentPage);
                 for (String linkIterator : pagelinks) {
                     if (!crawlLinks.contains(linkIterator)) {
                         crawlLinks.add(linkIterator);
                     }
-                }}
+                }
+            }
         }
 
         crawlLinks.removeAll(siteLinks);
+
+
+/*        Iterator i = crawlLinks.iterator();
+        System.out.println("The ArrayList elements are:");
+        while (i.hasNext()) {
+            System.out.println(i.next());
+        }*/
 
         for (String crawlLinksIterator : crawlLinks) {
             if (!siteLinks.contains(crawlLinksIterator)) {
