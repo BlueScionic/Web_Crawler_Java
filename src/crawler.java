@@ -149,8 +149,8 @@ public class crawler {
         }
         //Send Data Output
         DataOutputStream out = new DataOutputStream(web_socket.getOutputStream());
-        //String request = "GET /" + page_address + " HTTP/1.0\r\n\r\n";
-        String request = "GET /" + page_address + " HTTP/1.0\n\n";
+        String request = "GET /" + page_address + " HTTP/1.0\r\n\r\n";
+        //String request = "GET /" + page_address + " HTTP/1.0\n\n";
         out.write(request.getBytes());
 
         //Receive Data Input

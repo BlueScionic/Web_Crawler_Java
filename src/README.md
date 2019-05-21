@@ -3,7 +3,7 @@
 Please read instructions before continuing.
 
 ## Compiling
-./makefile
+make
 
 ## Usage
-crawler.java <hostname> <port>
+java crawler <hostname> <port>
