@@ -37,6 +37,7 @@ public class crawler {
             for (String i : args){
                 if (i.equals("-v")) {
                     verbose = true;
+                    break;
                 }
             }
             server_address = args[0];
@@ -270,8 +271,7 @@ public class crawler {
             } else if (typeMatcher.find()) {
                 page.type = typeMatcher.group(1);
             } else if (lengthMatcher.find()) {
-                int length = Integer.parseInt(lengthMatcher.group(1));
-                page.pagelength = length;
+                page.pagelength = Integer.parseInt(lengthMatcher.group(1));
             } else if (modifiedMatcher.find()) {
                 page.modified = modified_date_format.parse(modifiedMatcher.group(1));
             } else if (locationMatcher.find()) {
@@ -285,44 +285,3 @@ public class crawler {
     }
 }
 
-//Page Object
-class Page {
-    String domain, url, status, type, location;
-    int pagelength;
-    Date modified;
-    ArrayList<String> content;
-    Boolean redirected;
-
-    //Checks if page returns as an html type
-    public boolean isPagehtml() {
-        if (type.contains("html")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    //Checks if page is a redirect page
-    public boolean isRedirect() {
-        String redirects[] = {"300","301","302","303","304","305","306","307","308"};
-        for (String code : redirects) {
-            if (status.equals(code)){
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    public Page() {
-        this.url = "";
-        this.status = "";
-        this.type = "";
-        this.pagelength = 0;
-        this.modified = new Date();
-        this.domain = "";
-        this.content = new ArrayList<>();
-        this.location = "";
-        this.redirected = false;
-    }
-}

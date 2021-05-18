@@ -1,4 +1,4 @@
-# COMP3310 Assignment 2 u5372418
+# Basic HTTP Web Crawler
 
 Please read instructions before continuing.
 
